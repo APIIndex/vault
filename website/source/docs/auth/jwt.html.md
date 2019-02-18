@@ -16,6 +16,64 @@ This method may be initiated from the Vault UI or the command line. If a JWT is 
 direction, it can be cryptographically verified using locally-provided keys, or, if
 configured, an OIDC Discovery service can be used to fetch the appropriate keys.
 
+... provide a JWT vs. receive an ID token as part of an OIDC login flow
+
+
+### Bound Claims
+Once a JWT has been validated as being properly signed and not expired, the authorization flow will validated that any
+configured "bound" parameters match. In some cases there are dedicated parameters, such as `bound_subject` which must
+match the JWT's `sub` parameters. A role may also be configured to check arbitrary claimss through the `bound_claims`
+maps. For example, assume `bound_claims` was set as:
+
+```json
+{
+  "division": "Europe",
+  "department": "Engineering"
+}
+```
+
+Only JWTs both "division" and "department" claims and matching values would be authorized.
+
+### Claims as Metadata
+Claims can be copied into the resulting auth token and alias metadata by configuring `claims_mappings`. This role
+parameter is a map of items to copy. The map elements are of the form: `"<JWT claim>": "<Metadata key>". Given the following
+`claim_mappings` map:
+
+```json
+{
+  "division": "organization",
+  "department": "department"
+}
+```
+
+This specifies that the value in the JWT claim "division" should be copied to the metadata key "organization". The JWT
+"department" claim value will also be copied into metadata but will retain the key name.
+
+Note that the metadata key name "role" is reserved and my not be provided as a metadata target.
+
+
+### Claim specifications and JSONPointer
+Some parameters (e.g. `bound_claims` and `groups_claim`) specify a key from the JWT to reference. If the
+key is at the top of level of the JWT, the name may be provided directly. If it is
+nested at a lower level, a JSONPointer may be used.
+
+Assume the following JSON data to be referenced:
+
+```json
+{
+  "division": "North America",
+  "groups": {
+    "primary": "Engineering",
+    "secondary": "Software"
+  }
+}
+```
+
+A parameter set to `"division"` will reference "North America", and one set to `"/groups/primary"` will reference "Engineering". Any valid
+JSONPointer can be used as a selector. Refer to the [JSONPointer RFC](https://tools.ietf.org/html/rfc6901)  for a full
+description of the syntax
+
+
 ## OIDC Authentication
 
 ### Redirect URIs
